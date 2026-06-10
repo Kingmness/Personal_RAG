@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RAG-PRA 后端架构图</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2guVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js" integrity="sha384-en/ztfPSRkGfME4KIm05joYXynqzUgbsG5nMrj/xEFAHXkeZfO3yMK8QQ+mP7p1/" crossorigin="anonymous"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#020617;color:#e2e8f0;font-family:'JetBrains Mono',monospace;min-height:100vh;display:flex;justify-content:center;padding:32px 16px}
+.container{max-width:1600px;width:100%}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.header-left{display:flex;align-items:center;gap:12px}
+.pulse-dot{width:10px;height:10px;background:#22d3ee;border-radius:50%;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,211,238,0.6)}50%{opacity:0.7;box-shadow:0 0 0 8px rgba(34,211,238,0)}}
+.header h1{font-size:20px;font-weight:700;color:#f1f5f9}
+.header .subtitle{font-size:12px;color:#94a3b8;margin-top:2px}
+.toolbar{display:flex;align-items:center;gap:4px}
+.toolbar-toggle{background:rgba(30,41,59,0.8);border:1px solid #334155;color:#94a3b8;width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.toolbar-toggle:hover{border-color:#94a3b8;color:#e2e8f0}
+.toolbar-actions{display:none;gap:4px}
+.toolbar-actions.visible{display:flex}
+.toolbar-actions button{background:rgba(30,41,59,0.8);border:1px solid #334155;color:#94a3b8;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-family:'JetBrains Mono',monospace;transition:all 0.2s}
+.toolbar-actions button:hover{border-color:#94a3b8;color:#e2e8f0}
+.diagram-card{background:rgba(15,23,42,0.6);border:1px solid #1e293b;border-radius:12px;padding:24px;overflow:hidden}
+.cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}
+.card{background:rgba(15,23,42,0.6);border:1px solid #1e293b;border-radius:8px;padding:16px}
+.card-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.card-dot{width:8px;height:8px;border-radius:50%}
+.card-dot.cyan{background:#22d3ee}
+.card-dot.green{background:#34d399}
+.card-dot.violet{background:#a78bfa}
+.card-dot.amber{background:#fbbf24}
+.card-dot.rose{background:#fb7185}
+.card h3{font-size:13px;font-weight:600;color:#e2e8f0}
+.card ul{list-style:none;padding:0}
+.card ul li{font-size:11px;color:#94a3b8;margin-bottom:4px;padding-left:12px;position:relative}
+.card ul li::before{content:'';position:absolute;left:0;top:6px;width:4px;height:4px;border-radius:50%;background:#475569}
+.footer{margin-top:24px;text-align:center;font-size:10px;color:#475569}
+@media print{.toolbar{display:none !important}}
+</style>
+</head>
+<body>
+<div class="container" id="report-container">
+  <div class="header">
+    <div class="header-left">
+      <div class="pulse-dot"></div>
+      <div>
+        <h1>RAG-PRA 后端架构图</h1>
+        <div class="subtitle">业务逻辑层 (src/) 与 HTTP 适配层 (routers/) 调用关系</div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <button class="toolbar-toggle" onclick="toggleToolbar()">&#8942;</button>
+      <div class="toolbar-actions" id="toolbar-actions">
+        <button onclick="copyAsImage()">Copy</button>
+        <button onclick="downloadPNG()">PNG</button>
+        <button onclick="downloadPDF()">PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-card">
+    <svg viewBox="0 0 1500 870" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+      <defs>
+        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+        </pattern>
+        <marker id="a-g" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#34d399"/></marker>
+        <marker id="a-c" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#22d3ee"/></marker>
+        <marker id="a-v" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#a78bfa"/></marker>
+        <marker id="a-a" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#fbbf24"/></marker>
+        <marker id="a-r" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#fb7185"/></marker>
+        <marker id="a-s" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#94a3b8"/></marker>
+      </defs>
+
+      <!-- 背景 -->
+      <rect width="1500" height="870" fill="#020617"/>
+      <rect width="1500" height="870" fill="url(#grid)"/>
+
+      <!-- ============================================================ -->
+      <!-- 连线层 (最先绘制，在组件之下)                                   -->
+      <!-- ============================================================ -->
+
+      <!-- L1 -> L2 -->
+      <line x1="750" y1="55" x2="750" y2="82" stroke="#22d3ee" stroke-width="2" marker-end="url(#a-c)"/>
+
+      <!-- L2 -> L3: server 分发到各 router -->
+      <line x1="650" y1="118" x2="155" y2="155" stroke="#22d3ee" stroke-width="1.2" marker-end="url(#a-c)" opacity="0.7"/>
+      <line x1="700" y1="118" x2="390" y2="155" stroke="#22d3ee" stroke-width="1.2" marker-end="url(#a-c)" opacity="0.7"/>
+      <line x1="750" y1="118" x2="635" y2="155" stroke="#22d3ee" stroke-width="1.2" marker-end="url(#a-c)" opacity="0.7"/>
+      <line x1="800" y1="118" x2="875" y2="155" stroke="#22d3ee" stroke-width="1.2" marker-end="url(#a-c)" opacity="0.7"/>
+      <line x1="850" y1="118" x2="1115" y2="155" stroke="#22d3ee" stroke-width="1.2" marker-end="url(#a-c)" opacity="0.7"/>
+
+      <!-- L3 -> L4: routers -> dependencies (虚线) -->
+      <line x1="155" y1="220" x2="620" y2="268" stroke="#fbbf24" stroke-width="1" stroke-dasharray="6,4" marker-end="url(#a-a)" opacity="0.45"/>
+      <line x1="390" y1="220" x2="660" y2="268" stroke="#fbbf24" stroke-width="1" stroke-dasharray="6,4" marker-end="url(#a-a)" opacity="0.45"/>
+      <line x1="635" y1="220" x2="700" y2="268" stroke="#fbbf24" stroke-width="1" stroke-dasharray="6,4" marker-end="url(#a-a)" opacity="0.45"/>
+      <line x1="875" y1="220" x2="740" y2="268" stroke="#fbbf24" stroke-width="1" stroke-dasharray="6,4" marker-end="url(#a-a)" opacity="0.45"/>
+      <line x1="1115" y1="220" x2="780" y2="268" stroke="#fbbf24" stroke-width="1" stroke-dasharray="6,4" marker-end="url(#a-a)" opacity="0.45"/>
+
+      <!-- L3 -> L5: routers -> 业务逻辑 (实线) -->
+      <!-- documents -> pipeline -->
+      <polyline points="340,220 340,245 245,350" fill="none" stroke="#34d399" stroke-width="1.8" marker-end="url(#a-g)"/>
+      <!-- query -> pipeline -->
+      <polyline points="580,220 580,245 300,350" fill="none" stroke="#34d399" stroke-width="1.8" marker-end="url(#a-g)"/>
+      <!-- documents -> metadata -->
+      <polyline points="440,220 440,260 520,350" fill="none" stroke="#a78bfa" stroke-width="1.2" marker-end="url(#a-v)" opacity="0.7"/>
+      <!-- history -> history_store -->
+      <polyline points="875,220 875,260 770,350" fill="none" stroke="#a78bfa" stroke-width="1.2" marker-end="url(#a-v)" opacity="0.7"/>
+      <!-- admin -> config_manager -->
+      <polyline points="1115,220 1115,260 1020,350" fill="none" stroke="#a78bfa" stroke-width="1.2" marker-end="url(#a-v)" opacity="0.7"/>
+
+      <!-- L4 -> L5: dependencies -> 业务逻辑 -->
+      <line x1="650" y1="310" x2="300" y2="350" stroke="#fb7185" stroke-width="1.8" marker-end="url(#a-r)"/>
+      <line x1="750" y1="310" x2="560" y2="350" stroke="#fb7185" stroke-width="1.2" marker-end="url(#a-r)" opacity="0.7"/>
+
+      <!-- L5 -> L6: pipeline -> 管线阶段 -->
+      <line x1="150" y1="410" x2="155" y2="460" stroke="#34d399" stroke-width="1.2" marker-end="url(#a-g)"/>
+      <line x1="220" y1="410" x2="310" y2="460" stroke="#34d399" stroke-width="1.2" marker-end="url(#a-g)"/>
+      <line x1="290" y1="410" x2="490" y2="460" stroke="#34d399" stroke-width="1.2" marker-end="url(#a-g)"/>
+      <line x1="350" y1="410" x2="680" y2="460" stroke="#a78bfa" stroke-width="1" marker-end="url(#a-v)" opacity="0.6"/>
+      <!-- pipeline -> questions_processing (懒加载) -->
+      <line x1="380" y1="410" x2="890" y2="460" stroke="#fb7185" stroke-width="1.8" marker-end="url(#a-r)"/>
+
+      <!-- L6 -> L7: questions_processing -> 查询引擎 -->
+      <line x1="870" y1="520" x2="580" y2="570" stroke="#34d399" stroke-width="1.2" marker-end="url(#a-g)"/>
+      <line x1="940" y1="520" x2="800" y2="570" stroke="#34d399" stroke-width="1.2" marker-end="url(#a-g)"/>
+      <line x1="1010" y1="520" x2="1030" y2="570" stroke="#fb7185" stroke-width="1.2" marker-end="url(#a-r)"/>
+
+      <!-- L7 -> L8: 查询引擎 -> 基础设施 -->
+      <line x1="530" y1="625" x2="400" y2="670" stroke="#94a3b8" stroke-width="0.8" marker-end="url(#a-s)" opacity="0.4"/>
+      <line x1="1030" y1="625" x2="1030" y2="670" stroke="#94a3b8" stroke-width="0.8" marker-end="url(#a-s)" opacity="0.4"/>
+      <!-- reranking -> api_requests (同层) -->
+      <line x1="880" y1="598" x2="940" y2="598" stroke="#fb7185" stroke-width="0.8" stroke-dasharray="4,3" marker-end="url(#a-r)" opacity="0.4"/>
+
+      <!-- ============================================================ -->
+      <!-- 区域边界                                                       -->
+      <!-- ============================================================ -->
+      <rect x="25" y="15" width="1450" height="45" rx="8" fill="none" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="8,4" opacity="0.2"/>
+      <rect x="25" y="72" width="1450" height="50" rx="8" fill="none" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="8,4" opacity="0.2"/>
+      <rect x="25" y="145" width="1450" height="82" rx="8" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="8,4" opacity="0.25"/>
+      <rect x="25" y="252" width="1450" height="65" rx="8" fill="none" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="8,4" opacity="0.2"/>
+      <rect x="25" y="338" width="1450" height="80" rx="8" fill="none" stroke="#34d399" stroke-width="1.5" stroke-dasharray="8,4" opacity="0.25"/>
+      <rect x="25" y="448" width="1450" height="80" rx="8" fill="none" stroke="#34d399" stroke-width="1.5" stroke-dasharray="8,4" opacity="0.2"/>
+      <rect x="25" y="558" width="1450" height="80" rx="8" fill="none" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="8,4" opacity="0.2"/>
+      <rect x="25" y="660" width="1450" height="55" rx="8" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="8,4" opacity="0.15"/>
+
+      <!-- ============================================================ -->
+      <!-- 区域标签 (中英双语)                                             -->
+      <!-- ============================================================ -->
+      <text x="40" y="33" font-size="9" fill="#22d3ee" font-weight="600" font-family="'JetBrains Mono',monospace" opacity="0.7">CLIENT / 客户端</text>
+      <text x="40" y="90" font-size="9" fill="#22d3ee" font-weight="600" font-family="'JetBrains Mono',monospace" opacity="0.7">ENTRY / 应用入口</text>
+      <text x="40" y="160" font-size="9" fill="#fbbf24" font-weight="600" font-family="'JetBrains Mono',monospace" opacity="0.7">HTTP ADAPTER / HTTP适配层 (routers/)</text>
+      <text x="40" y="268" font-size="9" fill="#fb7185" font-weight="600" font-family="'JetBrains Mono',monospace" opacity="0.7">DI / 依赖注入 (dependencies.py)</text>
+      <text x="40" y="354" font-size="9" fill="#34d399" font-weight="600" font-family="'JetBrains Mono',monospace" opacity="0.7">BUSINESS LOGIC / 业务逻辑层 (src/)</text>
+      <text x="40" y="464" font-size="9" fill="#34d399" font-weight="600" font-family="'JetBrains Mono',monospace" opacity="0.7">PIPELINE STAGES / 管线阶段</text>
+      <text x="40" y="574" font-size="9" fill="#fb7185" font-weight="600" font-family="'JetBrains Mono',monospace" opacity="0.7">QUERY ENGINE / 查询引擎</text>
+      <text x="40" y="676" font-size="9" fill="#94a3b8" font-weight="600" font-family="'JetBrains Mono',monospace" opacity="0.7">INFRA / 基础设施</text>
+
+      <!-- ============================================================ -->
+      <!-- 组件层                                                          -->
+      <!-- ============================================================ -->
+
+      <!-- === L1 客户端 === -->
+      <g>
+        <rect x="630" y="22" width="240" height="32" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="750" y="43" font-size="10" fill="#22d3ee" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono',monospace">Browser / 浏览器</text>
+      </g>
+
+      <!-- === L2 应用入口 === -->
+      <g>
+        <rect x="540" y="80" width="420" height="36" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="750" y="100" font-size="10" fill="#22d3ee" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono',monospace">server.py / 应用入口</text>
+        <text x="750" y="112" font-size="7" fill="#64748b" text-anchor="middle" font-family="'JetBrains Mono',monospace">FastAPI + 中间件 + CORS + 认证 + 追踪</text>
+      </g>
+
+      <!-- === L3 HTTP 适配层 === -->
+      <!-- health.py -->
+      <g>
+        <rect x="55" y="155" width="200" height="62" rx="6" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="155" y="173" font-size="10" fill="#fbbf24" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono',monospace">health.py</text>
+        <text x="155" y="187" font-size="8" fill="#e2e8f0" text-anchor="middle" font-family="'JetBrains Mono',monospace">健康检查</text>
+        <text x="155" y="201" font-size="7" fill="#64748b" text-anchor="middle" font-family="'JetBrains Mono',monospace">/health + /api/trace</text>
+        <text x="155" y="212" font-size="7" fill="#475569" text-anchor="middle" font-family="'JetBrains Mono',monospace">链路日志追踪</text>
+      </g>
+      <!-- documents.py -->
+      <g>
+        <rect x="275" y="155" width="230" height="62" rx="6" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="390" y="173" font-size="10" fill="#fbbf24" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono',monospace">documents.py</text>
+        <text x="390" y="187" font-size="8" fill="#e2e8f0" text-anchor="middle" font-family="'JetBrains Mono',monospace">文档管理</text>
+        <text x="390" y="201" font-size="7" fill="#64748b" text-anchor="middle" font-family="'JetBrains Mono',monospace">上传/解析/分块/索引/删除</text>
+        <text x="390" y="212" font-size="7" fill="#475569" text-anchor="middle" font-family="'JetBrains Mono',monospace">文件校验+写锁+原子删除</text>
+      </g>
+      <!-- query.py -->
+      <g>
+        <rect x="525" y="155" width="220" height="62" rx="6" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="635" y="173" font-size="10" fill="#fbbf24" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono',monospace">query.py</text>
+        <text x="635" y="187" font-size="8" fill="#e2e8f0" text-anchor="middle" font-family="'JetBrains Mono',monospace">查询问答</text>
+        <text x="635" y="201" font-size="7" fill="#64748b" text-anchor="middle" font-family="'JetBrains Mono',monospace">检索/问答/流式问答</text>
+        <text x="635" y="212" font-size="7" fill="#475569" text-anchor="middle" font-family="'JetBrains Mono',monospace">SSE流式+错误翻译</text>
+      </g>
+      <!-- history.py -->
+      <g>
+        <rect x="765" y="155" width="220" height="62" rx="6" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="875" y="173" font-size="10" fill="#fbbf24" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono',monospace">history.py</text>
+        <text x="875" y="187" font-size="8" fill="#e2e8f0" text-anchor="middle" font-family="'JetBrains Mono',monospace">历史记录</text>
+        <text x="875" y="201" font-size="7" fill="#64748b" text-anchor="middle" font-family="'JetBrains Mono',monospace">增删查+自动清理</text>
+        <text x="875" y="212" font-size="7" fill="#475569" text-anchor="middle" font-family="'JetBrains Mono',monospace">查询历史持久化</text>
+      </g>
+      <!-- admin.py -->
+      <g>
+        <rect x="1005" y="155" width="220" height="62" rx="6" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="1115" y="173" font-size="10" fill="#fbbf24" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono',monospace">admin.py</text>
+        <text x="1115" y="187" font-size="8" fill="#e2e8f0" text-anchor="middle" font-family="'JetBrains Mono',monospace">管理配置</text>
+        <text x="1115" y="201" font-size="7" fill="#64748b" text-anchor="middle" font-family="'JetBrains Mono',monospace">配置/日志级别/重启</text>
+        <text x="1115" y="212" font-size="7" fill="#475569" text-anchor="middle" font-family="'JetBrains Mono',monospace">热更新+前端日志上报</text>
+      </g>
+
+      <!-- === L4 依赖注入层 === -->
+      <g>
+        <rect x="480" y="260" width="540" height="48" rx="6" fill="#0f172a" stroke="#fb7185" stroke-width="1.5"/>
+        <text x="750" y="280" font-size="10" fill="#fb7185" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono',monospace">dependencies.py / 依赖注入</text>
+        <text x="750" y="296" font-size="7" fill="#64748b" text-anchor="middle" font-family="'JetBrains Mono',monospace">get_pipeline() + get_write_lock() + get_metadata_manager() + apply_config()</text>
+      </g>
+
+      <!-- === L5 业务逻辑层 === -->
+      <!-- pipeline.py -->
+      <g>
+        <rect x="55" y="350" width="350" height="58" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+        <text x="230" y="370" font-size="10" fill="#34d399" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono',monospace">pipeline.py / 管线调度器</text>
+        <text x="230" y="384" font-size="8" fill="#e2e8f0" text-anchor="middle" font-family="'JetBrains Mono',monospace">串联全流程</text>
+        <text x="230" y="398" font-size="7" fill="#64748b" text-anchor="middle" font-family="'JetBrains Mono',monospace">解析->分块->索引->元信息->问答</text>
+      </g>
+      <!-- metadata.py -->
+      <g>
+        <rect x="425" y="350" width="190" height="58" rx="6" fill="#0f172a" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="520" y="370" font-size="10" fill="#a78bfa" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono',monospace">metadata.py</text>
+        <text x="520" y="384" font-size="8" fill="#e2e8f0" text-anchor="middle" font-family="'JetBrains Mono',monospace">元信息管理</text>
+        <text x="520" y="398" font-size="7" fill="#64748b" text-anchor="middle" font-family="'JetBrains Mono',monospace">SQLite + 一致性校验</text>
+      </g>
+      <!-- history_store.py -->
+      <g>
+        <rect x="635" y="350" width="220" height="58" rx="6" fill="#0f172a" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="745" y="370" font-size="10" fill="#a78bfa" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono',monospace">history_store.py</text>
+        <text x="745" y="384" font-size="8" fill="#e2e8f0" text-anchor="middle" font-family="'JetBrains Mono',monospace">历史记录存储</text>
+        <text x="745" y="398" font-size="7" fill="#64748b" text-anchor="middle" font-family="'JetBrains Mono',monospace">SQLite + 自动清理</text>
+      </g>
+      <!-- config_manager.py -->
+      <g>
+        <rect x="875" y="350" width="230" height="58" rx="6" fill="#0f172a" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="990" y="370" font-size="10" fill="#a78bfa" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono',monospace">config_manager.py</text>
+        <text x="990" y="384" font-size="8" fill="#e2e8f0" text-anchor="middle" font-family="'JetBrains Mono',monospace">配置管理器</text>
+        <text x="990" y="398" font-size="7" fill="#64748b" text-anchor="middle" font-family="'JetBrains Mono',monospace">JSON持久化+备份恢复</text>
+      </g>
+
+      <!-- === L6 管线阶段 === -->
+      <!-- pdf_mineru_parser -->
+      <g>
+        <rect x="55" y="460" width="200" height="58" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+        <text x="155" y="480" font-size="10" fill="#34d399" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono',monospace">pdf_mineru_parser</text>
+        <text x="155" y="494" font-size="8" fill="#e2e8f0" text-anchor="middle" font-family="'JetBrains Mono',monospace">PDF解析器</text>
+        <text x="155" y="508" font-size="7" fill="#64748b" text-anchor="middle" font-family="'JetBrains Mono',monospace">PDF -> Markdown</text>
+      </g>
+      <!-- text_chunker -->
+      <g>
+        <rect x="275" y="460" width="180" height="58" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+        <text x="365" y="480" font-size="10" fill="#34d399" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono',monospace">text_chunker</text>
+        <text x="365" y="494" font-size="8" fill="#e2e8f0" text-anchor="middle" font-family="'JetBrains Mono',monospace">文本分块器</text>
+        <text x="365" y="508" font-size="7" fill="#64748b" text-anchor="middle" font-family="'JetBrains Mono',monospace">MD -> Chunks</text>
+      </g>
+      <!-- ingestion -->
+      <g>
+        <rect x="475" y="460" width="200" height="58" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+        <text x="575" y="480" font-size="10" fill="#34d399" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono',monospace">ingestion</text>
+        <text x="575" y="494" font-size="8" fill="#e2e8f0" text-anchor="middle" font-family="'JetBrains Mono',monospace">索引构建</text>
+        <text x="575" y="508" font-size="7" fill="#64748b" text-anchor="middle" font-family="'JetBrains Mono',monospace">-> FAISS + BM25</text>
+      </g>
+      <!-- metadata (管线内) -->
+      <g>
+        <rect x="695" y="460" width="170" height="58" rx="6" fill="#0f172a" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="780" y="480" font-size="10" fill="#a78bfa" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono',monospace">metadata</text>
+        <text x="780" y="494" font-size="8" fill="#e2e8f0" text-anchor="middle" font-family="'JetBrains Mono',monospace">元信息写入</text>
+        <text x="780" y="508" font-size="7" fill="#64748b" text-anchor="middle" font-family="'JetBrains Mono',monospace">-> SQLite</text>
+      </g>
+      <!-- questions_processing -->
+      <g>
+        <rect x="885" y="460" width="260" height="58" rx="6" fill="#0f172a" stroke="#fb7185" stroke-width="1.5"/>
+        <text x="1015" y="480" font-size="10" fill="#fb7185" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono',monospace">questions_processing</text>
+        <text x="1015" y="494" font-size="8" fill="#e2e8f0" text-anchor="middle" font-family="'JetBrains Mono',monospace">问答处理器</text>
+        <text x="1015" y="508" font-size="7" fill="#64748b" text-anchor="middle" font-family="'JetBrains Mono',monospace">检索->重排序->LLM生成</text>
+      </g>
+
+      <!-- === L7 查询引擎 === -->
+      <!-- retrieval -->
+      <g>
+        <rect x="310" y="570" width="250" height="58" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+        <text x="435" y="590" font-size="10" fill="#34d399" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono',monospace">retrieval.py</text>
+        <text x="435" y="604" font-size="8" fill="#e2e8f0" text-anchor="middle" font-family="'JetBrains Mono',monospace">混合检索</text>
+        <text x="435" y="618" font-size="7" fill="#64748b" text-anchor="middle" font-family="'JetBrains Mono',monospace">FAISS + BM25 融合</text>
+      </g>
+      <!-- reranking -->
+      <g>
+        <rect x="580" y="570" width="240" height="58" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+        <text x="700" y="590" font-size="10" fill="#34d399" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono',monospace">reranking.py</text>
+        <text x="700" y="604" font-size="8" fill="#e2e8f0" text-anchor="middle" font-family="'JetBrains Mono',monospace">重排序</text>
+        <text x="700" y="618" font-size="7" fill="#64748b" text-anchor="middle" font-family="'JetBrains Mono',monospace">LLM 相关性评分</text>
+      </g>
+      <!-- api_requests -->
+      <g>
+        <rect x="840" y="570" width="260" height="58" rx="6" fill="#0f172a" stroke="#fb7185" stroke-width="1.5"/>
+        <text x="970" y="590" font-size="10" fill="#fb7185" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono',monospace">api_requests.py</text>
+        <text x="970" y="604" font-size="8" fill="#e2e8f0" text-anchor="middle" font-family="'JetBrains Mono',monospace">LLM调用客户端</text>
+        <text x="970" y="618" font-size="7" fill="#64748b" text-anchor="middle" font-family="'JetBrains Mono',monospace">DashScope 流式/非流式</text>
+      </g>
+
+      <!-- === L8 基础设施 === -->
+      <!-- config.py -->
+      <g>
+        <rect x="40" y="668" width="180" height="40" rx="6" fill="#0f172a" stroke="#94a3b8" stroke-width="1" opacity="0.8"/>
+        <text x="130" y="685" font-size="9" fill="#94a3b8" font-weight="500" text-anchor="middle" font-family="'JetBrains Mono',monospace">config.py</text>
+        <text x="130" y="700" font-size="7" fill="#475569" text-anchor="middle" font-family="'JetBrains Mono',monospace">配置中心/环境变量</text>
+      </g>
+      <!-- logger.py -->
+      <g>
+        <rect x="240" y="668" width="180" height="40" rx="6" fill="#0f172a" stroke="#94a3b8" stroke-width="1" opacity="0.8"/>
+        <text x="330" y="685" font-size="9" fill="#94a3b8" font-weight="500" text-anchor="middle" font-family="'JetBrains Mono',monospace">logger.py</text>
+        <text x="330" y="700" font-size="7" fill="#475569" text-anchor="middle" font-family="'JetBrains Mono',monospace">日志系统/追踪ID</text>
+      </g>
+      <!-- retry_utils.py -->
+      <g>
+        <rect x="440" y="668" width="180" height="40" rx="6" fill="#0f172a" stroke="#94a3b8" stroke-width="1" opacity="0.8"/>
+        <text x="530" y="685" font-size="9" fill="#94a3b8" font-weight="500" text-anchor="middle" font-family="'JetBrains Mono',monospace">retry_utils.py</text>
+        <text x="530" y="700" font-size="7" fill="#475569" text-anchor="middle" font-family="'JetBrains Mono',monospace">重试工具/指数退避</text>
+      </g>
+      <!-- prompts.py -->
+      <g>
+        <rect x="640" y="668" width="180" height="40" rx="6" fill="#0f172a" stroke="#94a3b8" stroke-width="1" opacity="0.8"/>
+        <text x="730" y="685" font-size="9" fill="#94a3b8" font-weight="500" text-anchor="middle" font-family="'JetBrains Mono',monospace">prompts.py</text>
+        <text x="730" y="700" font-size="7" fill="#475569" text-anchor="middle" font-family="'JetBrains Mono',monospace">提示模板/5种类型</text>
+      </g>
+      <!-- keyword_extractor -->
+      <g>
+        <rect x="840" y="668" width="200" height="40" rx="6" fill="#0f172a" stroke="#94a3b8" stroke-width="1" opacity="0.8"/>
+        <text x="940" y="685" font-size="9" fill="#94a3b8" font-weight="500" text-anchor="middle" font-family="'JetBrains Mono',monospace">keyword_extractor</text>
+        <text x="940" y="700" font-size="7" fill="#475569" text-anchor="middle" font-family="'JetBrains Mono',monospace">关键词提取/jieba</text>
+      </g>
+      <!-- question_rewriter -->
+      <g>
+        <rect x="1060" y="668" width="200" height="40" rx="6" fill="#0f172a" stroke="#94a3b8" stroke-width="1" opacity="0.8"/>
+        <text x="1160" y="685" font-size="9" fill="#94a3b8" font-weight="500" text-anchor="middle" font-family="'JetBrains Mono',monospace">question_rewriter</text>
+        <text x="1160" y="700" font-size="7" fill="#475569" text-anchor="middle" font-family="'JetBrains Mono',monospace">查询改写/LLM</text>
+      </g>
+
+      <!-- ============================================================ -->
+      <!-- 底部图例                                                       -->
+      <!-- ============================================================ -->
+      <g transform="translate(55,740)">
+        <text x="0" y="0" font-size="9" fill="#94a3b8" font-weight="600" font-family="'JetBrains Mono',monospace">图例:</text>
+        <!-- 实线 -->
+        <line x1="50" y1="-3" x2="90" y2="-3" stroke="#34d399" stroke-width="1.5"/>
+        <text x="95" y="0" font-size="8" fill="#94a3b8" font-family="'JetBrains Mono',monospace">直接调用</text>
+        <!-- 虚线 -->
+        <line x1="170" y1="-3" x2="210" y2="-3" stroke="#fbbf24" stroke-width="1" stroke-dasharray="6,4"/>
+        <text x="215" y="0" font-size="8" fill="#94a3b8" font-family="'JetBrains Mono',monospace">依赖注入</text>
+        <!-- 绿色 -->
+        <rect x="290" y="-8" width="12" height="12" rx="2" fill="none" stroke="#34d399" stroke-width="1.5"/>
+        <text x="307" y="0" font-size="8" fill="#94a3b8" font-family="'JetBrains Mono',monospace">索引管线(写入)</text>
+        <!-- 粉色 -->
+        <rect x="420" y="-8" width="12" height="12" rx="2" fill="none" stroke="#fb7185" stroke-width="1.5"/>
+        <text x="437" y="0" font-size="8" fill="#94a3b8" font-family="'JetBrains Mono',monospace">查询管线(读取)</text>
+        <!-- 紫色 -->
+        <rect x="550" y="-8" width="12" height="12" rx="2" fill="none" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="567" y="0" font-size="8" fill="#94a3b8" font-family="'JetBrains Mono',monospace">数据存储</text>
+        <!-- 黄色 -->
+        <rect x="640" y="-8" width="12" height="12" rx="2" fill="none" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="657" y="0" font-size="8" fill="#94a3b8" font-family="'JetBrains Mono',monospace">HTTP适配</text>
+      </g>
+
+      <!-- 数据流 -->
+      <g transform="translate(55,770)">
+        <text x="0" y="0" font-size="9" fill="#94a3b8" font-weight="600" font-family="'JetBrains Mono',monospace">数据流:</text>
+        <text x="60" y="0" font-size="8" fill="#34d399" font-family="'JetBrains Mono',monospace">索引: PDF -> Markdown -> Chunks -> FAISS+BM25</text>
+        <text x="440" y="0" font-size="8" fill="#fb7185" font-family="'JetBrains Mono',monospace">查询: Question -> Retrieve -> Rerank -> LLM -> Answer</text>
+      </g>
+
+    </svg>
+  </div>
+
+  <!-- 底部卡片 -->
+  <div class="cards-grid">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-dot amber"></div>
+        <h3>HTTP 适配层 / routers/</h3>
+      </div>
+      <ul>
+        <li>请求校验 (Pydantic 模型约束)</li>
+        <li>文件安全 (路径遍历防护)</li>
+        <li>并发控制 (asyncio.Lock 写锁)</li>
+        <li>原子删除 (临时目录 + 回滚)</li>
+        <li>SSE 流式适配 + 错误翻译</li>
+        <li>响应格式化 + 耗时计算</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-dot green"></div>
+        <h3>业务逻辑层 / src/</h3>
+      </div>
+      <ul>
+        <li>pipeline.py 串联全流程</li>
+        <li>questions_processing.py 问答引擎</li>
+        <li>retrieval.py 混合检索</li>
+        <li>reranking.py LLM 重排序</li>
+        <li>ingestion.py 索引构建</li>
+        <li>metadata.py 元信息管理</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-dot rose"></div>
+        <h3>依赖注入 / dependencies.py</h3>
+      </div>
+      <ul>
+        <li>Pipeline 单例 (双重检查锁)</li>
+        <li>asyncio.Lock 写锁共享</li>
+        <li>MetadataManager 单例</li>
+        <li>apply_config_to_pipeline() 热更新</li>
+        <li>get_logger() 统一日志</li>
+        <li>解耦 routers 与业务模块</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer">
+    RAG-PRA Backend Architecture &middot; src/ + routers/ + dependencies.py
+  </div>
+</div>
+
+<script>
+function toggleToolbar(){const a=document.getElementById('toolbar-actions');a.classList.toggle('visible')}
+function copyAsImage(){const c=document.getElementById('report-container');const r=c.getBoundingClientRect();html2canvas(document.body,{x:r.x-32,y:r.y-32,width:r.width+64,height:r.height+64,scale:2,ignoreElements:e=>e.classList&&e.classList.contains('toolbar')}).then(c=>{c.toBlob(b=>{navigator.clipboard.write([new ClipboardItem({'image/png':b})]).then(()=>alert('Copied!'))})})}
+function downloadPNG(){const c=document.getElementById('report-container');const r=c.getBoundingClientRect();html2canvas(document.body,{x:r.x-32,y:r.y-32,width:r.width+64,height:r.height+64,scale:2,ignoreElements:e=>e.classList&&e.classList.contains('toolbar')}).then(c=>{const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='rag-pra-backend-architecture.png';a.click()})}
+function downloadPDF(){const c=document.getElementById('report-container');const r=c.getBoundingClientRect();html2canvas(document.body,{x:r.x-32,y:r.y-32,width:r.width+64,height:r.height+64,scale:2,ignoreElements:e=>e.classList&&e.classList.contains('toolbar')}).then(c=>{const{jsPDF}=window.jspdf;const p=new jsPDF('l','mm','a4');const w=p.internal.pageSize.getWidth();const h=p.internal.pageSize.getHeight();const iw=c.width;const ih=c.height;const s=Math.min(w/iw,h/ih);p.addImage(c.toDataURL('image/png'),'PNG',(w-iw*s)/2,(h-ih*s)/2,iw*s,ih*s);p.save('rag-pra-backend-architecture.pdf')})}
+</script>
+</body>
+</html>

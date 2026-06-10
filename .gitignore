@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# 环境变量
+.env
+.env.local
+
+# 运行时数据
+Backend/data/
+Backend/src/metadata.db
+Backend/src/metadata.db-shm
+Backend/src/metadata.db-wal
+
+# 前端
+node_modules/
+frontend/dist/
+
+# 日志与进程
+.pids/
+logs/
+*.log
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 测试产物
+test_questions/__pycache__/
+test_questions/results/
+
+# 根目录多余文件
+/package-lock.json
+test_layout.py
+
+# 调试与临时文件
+deprecated/
+answers.json
+debug-*.md
+.dbg/
+*.csv
+
+# 索引文件（已在 Backend/data/ 中覆盖，保留以防误提交）
+*.pkl
+*.faiss

@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAG架构图</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js" integrity="sha384-en/ztfPSRkGfME4KIm05joYXynqzUgbsG5nMrj/xEFAHXkeZfO3yMK8QQ+mP7p1/" crossorigin="anonymous"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'JetBrains Mono', monospace; background: #020617; min-height: 100vh; padding: 2rem; color: white; }
+    .container { max-width: 1420px; margin: 0 auto; }
+    .header { margin-bottom: 2rem; }
+    .header-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
+    .pulse-dot { width: 12px; height: 12px; background: #22d3ee; border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; }
+    .subtitle { color: #94a3b8; font-size: 0.875rem; margin-left: 1.75rem; }
+    .diagram-container { background: rgba(15, 23, 42, 0.5); border-radius: 1rem; border: 1px solid #1e293b; padding: 1.5rem; overflow-x: auto; }
+    svg { width: 100%; min-width: 1200px; display: block; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 2rem; }
+    .card { background: rgba(15, 23, 42, 0.5); border-radius: 0.75rem; border: 1px solid #1e293b; padding: 1.25rem; }
+    .card-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+    .card-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .card-dot.cyan { background: #22d3ee; } .card-dot.emerald { background: #34d399; }
+    .card-dot.violet { background: #a78bfa; } .card-dot.amber { background: #fbbf24; } .card-dot.rose { background: #fb7185; }
+    .card h3 { font-size: 0.875rem; font-weight: 600; }
+    .card ul { list-style: none; color: #94a3b8; font-size: 0.75rem; }
+    .card li { margin-bottom: 0.375rem; }
+    .footer { text-align: center; margin-top: 1.5rem; color: #475569; font-size: 0.75rem; }
+    .toolbar { display: flex; gap: 0.5rem; margin-left: auto; flex-shrink: 0; align-items: center; }
+    .toolbar-toggle { background: transparent; border: none; color: #475569; cursor: pointer; font-size: 1.25rem; line-height: 1; padding: 0.25rem 0.5rem; border-radius: 0.375rem; }
+    .toolbar-toggle:hover { color: #94a3b8; background: rgba(30, 41, 59, 0.5); }
+    .toolbar-actions { display: none; gap: 0.5rem; }
+    .toolbar.expanded .toolbar-actions { display: flex; }
+    .toolbar-actions button { background: rgba(30, 41, 59, 0.8); border: 1px solid #334155; color: #94a3b8; padding: 0.375rem 0.75rem; border-radius: 0.375rem; font-family: inherit; font-size: 0.75rem; cursor: pointer; }
+    .toolbar-actions button:hover { background: rgba(51, 65, 85, 0.8); color: white; border-color: #475569; }
+    @media print { body { background: #020617; padding: 1rem; } .toolbar { display: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="container" id="report-container">
+    <div class="header">
+      <div class="header-row">
+        <div class="pulse-dot"></div>
+        <h1>RAG架构图</h1>
+        <div class="toolbar">
+          <div class="toolbar-actions">
+            <button onclick="copyAsImage(this)">Copy 复制</button>
+            <button onclick="downloadPNG(this)">PNG 下载</button>
+            <button onclick="downloadPDF(this)">PDF 下载</button>
+          </div>
+          <button class="toolbar-toggle" onclick="this.parentElement.classList.toggle('expanded')" title="Export options">⋯</button>
+        </div>
+      </div>
+      <p class="subtitle">用户输入 → HTTP POST → FastAPI → Pipeline → 5步RAG → SSE流式回传 → React渲染</p>
+    </div>
+    <div class="diagram-container">
+<svg viewBox="0 0 1400 1300">
+<defs>
+<marker id="ah-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#34d399"/></marker>
+<marker id="ah-cyan" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#22d3ee"/></marker>
+<marker id="ah-amber" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#fbbf24"/></marker>
+<marker id="ah-violet" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#a78bfa"/></marker>
+<marker id="ah-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#fb923c"/></marker>
+<marker id="ah-rose" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#fb7185"/></marker>
+<pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/></pattern>
+</defs>
+
+<!-- 背景网格 -->
+<rect width="100%" height="100%" fill="url(#grid)"/>
+
+<!-- 区域1：前端请求与渲染（顶部） -->
+<rect x="20" y="55" width="1300" height="190" rx="10" fill="rgba(34,211,238,0.03)" stroke="#22d3ee" stroke-width="1" stroke-dasharray="8,4"/>
+<text x="36" y="78" fill="#22d3ee" font-size="12" font-weight="600">0. 前端请求与渲染 — React SPA 单页应用 (端口 :3000)</text>
+
+<!-- 请求路径组件：User Input 用户输入 -->
+<rect x="40" y="95" width="180" height="68" rx="6" fill="#0f172a"/>
+<rect x="40" y="95" width="180" height="68" rx="6" fill="rgba(30,41,59,0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+<text x="130" y="116" fill="white" font-size="11" font-weight="600" text-anchor="middle">User Input</text>
+<text x="130" y="132" fill="#cbd5e1" font-size="9" text-anchor="middle">用户输入</text>
+<text x="130" y="148" fill="#94a3b8" font-size="7" text-anchor="middle">自然语言问题</text>
+<text x="130" y="159" fill="#94a3b8" font-size="7" text-anchor="middle">Query String</text>
+
+<!-- 请求路径组件：handleAnswer() 处理函数 -->
+<line x1="220" y1="129" x2="248" y2="129" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#ah-cyan)"/>
+<rect x="255" y="95" width="310" height="68" rx="6" fill="#0f172a"/>
+<rect x="255" y="95" width="310" height="68" rx="6" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+<text x="410" y="116" fill="white" font-size="11" font-weight="600" text-anchor="middle">handleAnswer() 处理函数</text>
+<text x="410" y="132" fill="#94a3b8" font-size="8" text-anchor="middle">fetch POST /api/answer/stream</text>
+<text x="410" y="146" fill="#94a3b8" font-size="7" text-anchor="middle">X-Trace-ID 追踪标识生成</text>
+<text x="410" y="158" fill="#94a3b8" font-size="7" text-anchor="middle">Headers · Body 构造</text>
+
+<!-- 区域1底部响应路径 -->
+<text x="36" y="187" fill="#22d3ee" font-size="10" font-weight="600">SSE 流式回传路径 →</text>
+<rect x="40" y="190" width="200" height="48" rx="6" fill="#0f172a"/>
+<rect x="40" y="190" width="200" height="48" rx="6" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+<text x="140" y="208" fill="white" font-size="10" font-weight="600" text-anchor="middle">SSE Reader 读取器</text>
+<text x="140" y="223" fill="#94a3b8" font-size="7" text-anchor="middle">getReader() → decode 解析</text>
+<text x="140" y="233" fill="#94a3b8" font-size="7" text-anchor="middle">parse data: lines → JSON</text>
+
+<line x1="240" y1="214" x2="268" y2="214" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#ah-green)"/>
+<rect x="275" y="190" width="190" height="48" rx="6" fill="#0f172a"/>
+<rect x="275" y="190" width="190" height="48" rx="6" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+<text x="370" y="208" fill="white" font-size="10" font-weight="600" text-anchor="middle">setSteps() 步骤更新</text>
+<text x="370" y="223" fill="#94a3b8" font-size="7" text-anchor="middle">4步进度条更新</text>
+<text x="370" y="233" fill="#94a3b8" font-size="7" text-anchor="middle">useState Hook</text>
+
+<line x1="465" y1="214" x2="493" y2="214" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#ah-green)"/>
+<rect x="500" y="190" width="220" height="48" rx="6" fill="#0f172a"/>
+<rect x="500" y="190" width="220" height="48" rx="6" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+<text x="610" y="208" fill="white" font-size="10" font-weight="600" text-anchor="middle">setStreamingText() 流式文本</text>
+<text x="610" y="223" fill="#94a3b8" font-size="7" text-anchor="middle">逐token流式渲染</text>
+<text x="610" y="233" fill="#94a3b8" font-size="7" text-anchor="middle">逐字 typewriter 效果</text>
+
+<line x1="720" y1="214" x2="748" y2="214" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#ah-green)"/>
+<rect x="755" y="190" width="220" height="48" rx="6" fill="#0f172a"/>
+<rect x="755" y="190" width="220" height="48" rx="6" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+<text x="865" y="208" fill="white" font-size="10" font-weight="600" text-anchor="middle">setAnswer() 设置答案</text>
+<text x="865" y="223" fill="#94a3b8" font-size="7" text-anchor="middle">结构化答案+来源引用</text>
+<text x="865" y="233" fill="#94a3b8" font-size="7" text-anchor="middle">final_answer · sources</text>
+
+<line x1="975" y1="214" x2="1003" y2="214" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#ah-green)"/>
+<rect x="1010" y="190" width="200" height="48" rx="6" fill="#0f172a"/>
+<rect x="1010" y="190" width="200" height="48" rx="6" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+<text x="1110" y="208" fill="white" font-size="10" font-weight="600" text-anchor="middle">saveHistory() 历史保存</text>
+<text x="1110" y="223" fill="#94a3b8" font-size="7" text-anchor="middle">POST /api/history 接口</text>
+<text x="1110" y="233" fill="#94a3b8" font-size="7" text-anchor="middle">Q&A 持久化入库</text>
+
+<!-- 区域2：API 网关与调度 -->
+<rect x="20" y="265" width="1300" height="130" rx="10" fill="rgba(52,211,153,0.03)" stroke="#34d399" stroke-width="1" stroke-dasharray="8,4"/>
+<text x="36" y="288" fill="#34d399" font-size="12" font-weight="600">1. API 网关与调度 — FastAPI Server 应用服务器 (端口 :4000)</text>
+
+<!-- handleAnswer → FastAPI 入口（穿层连线，沿区域边界左侧走） -->
+<path d="M 410 163 L 410 175 L 10 175 L 10 345 L 40 345" fill="none" stroke="#22d3ee" stroke-width="1.2" stroke-dasharray="3,3" marker-end="url(#ah-cyan)"/>
+<text x="230" y="171" fill="#22d3ee" font-size="7">HTTP 请求流</text>
+
+<!-- FastAPI Server API 服务器 -->
+<rect x="40" y="305" width="360" height="80" rx="6" fill="#0f172a"/>
+<rect x="40" y="305" width="360" height="80" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+<text x="220" y="326" fill="white" font-size="11" font-weight="600" text-anchor="middle">FastAPI Server API 服务器</text>
+<text x="220" y="343" fill="#94a3b8" font-size="7" text-anchor="middle">auth_middleware 认证 · trace_middleware 追踪 · slowapi 限流</text>
+<text x="220" y="356" fill="#94a3b8" font-size="7" text-anchor="middle">@app.post('/api/answer/stream') 路由装饰器</text>
+<text x="220" y="370" fill="#94a3b8" font-size="6" text-anchor="middle">StreamingResponse(Server-Sent Events 流式响应)</text>
+
+<!-- Pipeline 单例 -->
+<line x1="400" y1="345" x2="438" y2="345" stroke="#34d399" stroke-width="1.5" marker-end="url(#ah-green)"/>
+<rect x="445" y="310" width="220" height="70" rx="6" fill="#0f172a"/>
+<rect x="445" y="310" width="220" height="70" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+<text x="555" y="331" fill="white" font-size="11" font-weight="600" text-anchor="middle">Pipeline 单例 (单例模式)</text>
+<text x="555" y="348" fill="#94a3b8" font-size="7" text-anchor="middle">get_pipeline() 工厂方法</text>
+<text x="555" y="362" fill="#94a3b8" font-size="7" text-anchor="middle">双重检查锁定 · 懒加载初始化</text>
+<text x="555" y="374" fill="#94a3b8" font-size="6" text-anchor="middle">Singleton Double-Checked Locking</text>
+
+<!-- QuestionProcessor 问题处理器 -->
+<line x1="665" y1="345" x2="703" y2="345" stroke="#34d399" stroke-width="1.5" marker-end="url(#ah-green)"/>
+<rect x="710" y="305" width="340" height="80" rx="6" fill="#0f172a"/>
+<rect x="710" y="305" width="340" height="80" rx="6" fill="rgba(6,78,59,0.5)" stroke="#34d399" stroke-width="1.5"/>
+<text x="880" y="326" fill="white" font-size="11" font-weight="600" text-anchor="middle">QuestionProcessor 问题处理器</text>
+<text x="880" y="343" fill="#94a3b8" font-size="7" text-anchor="middle">answer_stream(question, prompt_type, ...) 流式方法</text>
+<text x="880" y="356" fill="#94a3b8" font-size="7" text-anchor="middle">5步RAG流水线调度器 · 逐 event yield 事件</text>
+<text x="880" y="370" fill="#94a3b8" font-size="6" text-anchor="middle">async generator 异步生成器</text>
+
+<!-- 区域3：RAG 5步处理管道 -->
+<rect x="20" y="415" width="1300" height="520" rx="10" fill="rgba(52,211,153,0.02)" stroke="#34d399" stroke-width="1" stroke-dasharray="8,4"/>
+<text x="36" y="438" fill="#34d399" font-size="12" font-weight="600">2. RAG 5步处理管道 (检索增强生成核心流程)</text>
+
+<!-- QuestionProcessor → Step1 Router 入口（穿层连线） -->
+<path d="M 880 385 L880 405 L2 405 L2 500 L40 500" fill="none" stroke="#34d399" stroke-width="1.2" marker-end="url(#ah-green)"/>
+<line x1="870" y1="385" x2="880" y2="405" stroke="#34d399" stroke-width="1.2" stroke-dasharray="3,3"/>
+
+<!-- Step1 检索 -->
+<text x="40" y="465" fill="#fb923c" font-size="10" font-weight="600">Step1 检索 (Retrieve)</text>
+<rect x="40" y="475" width="150" height="55" rx="6" fill="#0f172a"/>
+<rect x="40" y="475" width="150" height="55" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+<text x="115" y="495" fill="white" font-size="11" font-weight="600" text-anchor="middle">Router 路由器</text>
+<text x="115" y="510" fill="#94a3b8" font-size="7" text-anchor="middle">关键字+向量双路路由</text>
+<text x="115" y="523" fill="#94a3b8" font-size="7" text-anchor="middle">Top-K 数据库筛选</text>
+
+<line x1="190" y1="502" x2="220" y2="502" stroke="#34d399" stroke-width="1.5" marker-end="url(#ah-green)"/>
+<rect x="225" y="475" width="170" height="55" rx="6" fill="#0f172a"/>
+<rect x="225" y="475" width="170" height="55" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+<text x="310" y="495" fill="white" font-size="11" font-weight="600" text-anchor="middle">FAISS Search 向量检索</text>
+<text x="310" y="510" fill="#94a3b8" font-size="7" text-anchor="middle">语义向量 top_n=30 召回</text>
+<text x="310" y="523" fill="#94a3b8" font-size="7" text-anchor="middle">faiss.read_index() 读取</text>
+
+<path d="M 190 502 L 198 502 L 198 450 L 310 450 L 310 474" fill="none" stroke="#fb923c" stroke-width="1.2" marker-end="url(#ah-orange)"/>
+<path d="M 190 502 L 198 502 L 198 450 L 515 450 L 515 474" fill="none" stroke="#fb923c" stroke-width="1.2" marker-end="url(#ah-orange)"/>
+
+<line x1="395" y1="502" x2="425" y2="502" stroke="#34d399" stroke-width="1.5" marker-end="url(#ah-green)"/>
+<rect x="430" y="475" width="170" height="55" rx="6" fill="#0f172a"/>
+<rect x="430" y="475" width="170" height="55" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+<text x="515" y="495" fill="white" font-size="11" font-weight="600" text-anchor="middle">BM25 Search 关键词检索</text>
+<text x="515" y="510" fill="#94a3b8" font-size="7" text-anchor="middle">jieba 分词 top_n=30</text>
+<text x="515" y="523" fill="#94a3b8" font-size="7" text-anchor="middle">pickle.load() 加载</text>
+
+<line x1="600" y1="502" x2="630" y2="502" stroke="#fb923c" stroke-width="1.5" marker-end="url(#ah-orange)"/>
+<rect x="635" y="475" width="260" height="55" rx="6" fill="#0f172a"/>
+<rect x="635" y="475" width="260" height="55" rx="6" fill="rgba(251,146,60,0.25)" stroke="#fb923c" stroke-width="1.5"/>
+<text x="765" y="495" fill="white" font-size="11" font-weight="600" text-anchor="middle">Hybrid Fusion 混合融合</text>
+<text x="765" y="510" fill="#94a3b8" font-size="7" text-anchor="middle">min-max 归一化 · 0.6×FAISS + 0.4×BM25 加权</text>
+<text x="765" y="523" fill="#94a3b8" font-size="7" text-anchor="middle">加权分数融合 (min-max归一化 + 加权求和)</text>
+
+<line x1="895" y1="502" x2="925" y2="502" stroke="#34d399" stroke-width="1.5" marker-end="url(#ah-green)"/>
+<rect x="930" y="475" width="200" height="55" rx="6" fill="#0f172a"/>
+<rect x="930" y="475" width="200" height="55" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+<text x="1030" y="495" fill="white" font-size="11" font-weight="600" text-anchor="middle">Page Restore 页面还原</text>
+<text x="1030" y="510" fill="#94a3b8" font-size="7" text-anchor="middle">chunk 切片 → 整页文本</text>
+<text x="1030" y="523" fill="#94a3b8" font-size="7" text-anchor="middle">去重 · 按 score 降序排序</text>
+
+<text x="1240" y="500" fill="#34d399" font-size="8" text-anchor="end">
+  <tspan x="1240" dy="0">→ pages[{source,page,</tspan>
+  <tspan x="1240" dy="1.2em">text,score}]</tspan>
+</text>
+
+<!-- Step2 重排 -->
+<path d="M 1030 530 L1030 560 L240 560 L240 578" fill="none" stroke="#34d399" stroke-width="1.2" marker-end="url(#ah-green)"/>
+<text x="40" y="570" fill="#fb923c" font-size="10" font-weight="600">Step2 重排 (Rerank)</text>
+
+<rect x="40" y="580" width="370" height="55" rx="6" fill="#0f172a"/>
+<rect x="40" y="580" width="370" height="55" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+<text x="225" y="600" fill="white" font-size="11" font-weight="600" text-anchor="middle">LLM Reranker 大模型重排器</text>
+<text x="225" y="615" fill="#94a3b8" font-size="7" text-anchor="middle">ThreadPoolExecutor 4线程并行 · 20s 超时降级</text>
+<text x="225" y="628" fill="#94a3b8" font-size="7" text-anchor="middle">通义千问 → relevance_score 相关性 0-1</text>
+
+<line x1="410" y1="607" x2="440" y2="607" stroke="#34d399" stroke-width="1.5" marker-end="url(#ah-green)"/>
+<rect x="445" y="580" width="310" height="55" rx="6" fill="#0f172a"/>
+<rect x="445" y="580" width="310" height="55" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+<text x="600" y="600" fill="white" font-size="11" font-weight="600" text-anchor="middle">Score Fusion 分数融合</text>
+<text x="600" y="615" fill="#94a3b8" font-size="7" text-anchor="middle">0.7×LLM分 + 0.3×检索分 加权</text>
+<text x="600" y="628" fill="#94a3b8" font-size="7" text-anchor="middle">combined_score 降序 top_n=5</text>
+
+<text x="900" y="610" fill="#34d399" font-size="8" text-anchor="end">→ [{...+relevance+reasoning}]</text>
+
+<!-- Step3 上下文 -->
+<path d="M 600 635 L600 665 L200 665 L200 685" fill="none" stroke="#34d399" stroke-width="1.2" marker-end="url(#ah-green)"/>
+<text x="40" y="675" fill="#fb923c" font-size="10" font-weight="600">Step3 上下文 (Context)</text>
+
+<rect x="40" y="685" width="210" height="55" rx="6" fill="#0f172a"/>
+<rect x="40" y="685" width="210" height="55" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+<text x="145" y="705" fill="white" font-size="11" font-weight="600" text-anchor="middle">Keyword Extract 关键字</text>
+<text x="145" y="720" fill="#94a3b8" font-size="7" text-anchor="middle">n-gram 去停用词</text>
+<text x="145" y="733" fill="#94a3b8" font-size="7" text-anchor="middle">长词优先匹配</text>
+
+<line x1="250" y1="712" x2="280" y2="712" stroke="#34d399" stroke-width="1.5" marker-end="url(#ah-green)"/>
+<rect x="285" y="685" width="240" height="55" rx="6" fill="#0f172a"/>
+<rect x="285" y="685" width="240" height="55" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+<text x="405" y="705" fill="white" font-size="11" font-weight="600" text-anchor="middle">Snippet Cut 片段截取</text>
+<text x="405" y="720" fill="#94a3b8" font-size="7" text-anchor="middle">window=100 滑动窗口截取</text>
+<text x="405" y="733" fill="#94a3b8" font-size="7" text-anchor="middle">扩展到句子边界</text>
+
+<line x1="525" y1="712" x2="555" y2="712" stroke="#34d399" stroke-width="1.5" marker-end="url(#ah-green)"/>
+<rect x="560" y="685" width="290" height="55" rx="6" fill="#0f172a"/>
+<rect x="560" y="685" width="290" height="55" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+<text x="705" y="705" fill="white" font-size="11" font-weight="600" text-anchor="middle">Prompt Build 提示构建</text>
+<text x="705" y="720" fill="#94a3b8" font-size="7" text-anchor="middle">system + user prompt 模板拼接</text>
+<text x="705" y="733" fill="#94a3b8" font-size="7" text-anchor="middle">【第X页】... --- ... 格式</text>
+
+<text x="945" y="715" fill="#34d399" font-size="8" text-anchor="end">→ context_str 上下文</text>
+
+<!-- Step4 LLM生成 -->
+<path d="M 705 740 L705 760 L250 760 L250 788" fill="none" stroke="#34d399" stroke-width="1.2" marker-end="url(#ah-green)"/>
+<text x="40" y="780" fill="#fb923c" font-size="10" font-weight="600">Step4 LLM 生成 (Generate)</text>
+
+<rect x="40" y="790" width="230" height="55" rx="6" fill="#0f172a"/>
+<rect x="40" y="790" width="230" height="55" rx="6" fill="rgba(120,53,15,0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+<text x="155" y="810" fill="white" font-size="11" font-weight="600" text-anchor="middle">通义千问 API (Qwen)</text>
+<text x="155" y="825" fill="#94a3b8" font-size="7" text-anchor="middle">qwen3.6-plus · stream=True</text>
+<text x="155" y="838" fill="#94a3b8" font-size="7" text-anchor="middle">temperature=0 确定性输出</text>
+
+<line x1="270" y1="817" x2="300" y2="817" stroke="#34d399" stroke-width="1.5" marker-end="url(#ah-green)"/>
+<text x="285" y="813" fill="#34d399" font-size="7" text-anchor="middle">token</text>
+
+<rect x="305" y="790" width="220" height="55" rx="6" fill="#0f172a"/>
+<rect x="305" y="790" width="220" height="55" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+<text x="415" y="810" fill="white" font-size="11" font-weight="600" text-anchor="middle">Stream Tokens 流式令牌</text>
+<text x="415" y="825" fill="#94a3b8" font-size="7" text-anchor="middle">逐 token yield 给 SSE</text>
+<text x="415" y="838" fill="#94a3b8" font-size="7" text-anchor="middle">full_text 累积</text>
+
+<line x1="525" y1="817" x2="555" y2="817" stroke="#34d399" stroke-width="1.5" marker-end="url(#ah-green)"/>
+<rect x="560" y="790" width="220" height="55" rx="6" fill="#0f172a"/>
+<rect x="560" y="790" width="220" height="55" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+<text x="670" y="810" fill="white" font-size="11" font-weight="600" text-anchor="middle">JSON Parse JSON 解析</text>
+<text x="670" y="825" fill="#94a3b8" font-size="7" text-anchor="middle">json.loads() 反序列化</text>
+<text x="670" y="838" fill="#94a3b8" font-size="7" text-anchor="middle">repair_json 兜底</text>
+
+<text x="875" y="820" fill="#34d399" font-size="8" text-anchor="end">→ {final_answer...}</text>
+
+<!-- Step5 校验 -->
+<path d="M 670 845 L670 855 L200 855 L200 870" fill="none" stroke="#34d399" stroke-width="1.2" marker-end="url(#ah-green)"/>
+<text x="40" y="862" fill="#fb923c" font-size="10" font-weight="600">Step5 校验 (Validate)</text>
+
+<rect x="40" y="872" width="290" height="55" rx="6" fill="#0f172a"/>
+<rect x="40" y="872" width="290" height="55" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+<text x="185" y="892" fill="white" font-size="11" font-weight="600" text-anchor="middle">Page Validate 页码校验</text>
+<text x="185" y="907" fill="#94a3b8" font-size="7" text-anchor="middle">过滤 LLM 幻觉页码</text>
+<text x="185" y="920" fill="#94a3b8" font-size="7" text-anchor="middle">不足时用检索 top 页补充</text>
+
+<line x1="330" y1="899" x2="363" y2="899" stroke="#34d399" stroke-width="1.5" marker-end="url(#ah-green)"/>
+<rect x="365" y="872" width="340" height="55" rx="6" fill="#0f172a"/>
+<rect x="365" y="872" width="340" height="55" rx="6" fill="rgba(6,78,59,0.5)" stroke="#34d399" stroke-width="1.5"/>
+<text x="535" y="892" fill="white" font-size="11" font-weight="600" text-anchor="middle">yield {"type":"result","data":...} 事件</text>
+<text x="535" y="907" fill="#94a3b8" font-size="7" text-anchor="middle">final_answer + pages + sources + elapsed</text>
+<text x="535" y="920" fill="#94a3b8" font-size="7" text-anchor="middle">最终结构化结果事件推送</text>
+
+<!-- SSE 回传通道 (区域3右侧独立垂直通道) -->
+<text x="1310" y="475" fill="#fb7185" font-size="10" font-weight="600" text-anchor="end">SSE 事件流</text>
+<text x="1310" y="488" fill="#fb7185" font-size="8" text-anchor="end">SSE Event Stream</text>
+<line x1="1280" y1="500" x2="1280" y2="892" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="6,4"/>
+
+<!-- SSE 触发点：Step1 检索完成 -->
+<line x1="1240" y1="500" x2="1280" y2="500" stroke="#fb7185" stroke-width="1.2" stroke-dasharray="4,3"/>
+<circle cx="1280" cy="500" r="5" fill="#fb7185" opacity="0.85"/>
+<text x="1285" y="510" fill="#fb7185" font-size="7">step1 检索 done</text>
+
+<!-- SSE 触发点：Step2 重排完成 -->
+<line x1="900" y1="608" x2="1280" y2="608" stroke="#fb7185" stroke-width="1.2" stroke-dasharray="4,3"/>
+<circle cx="1280" cy="608" r="5" fill="#fb7185" opacity="0.85"/>
+<text x="1285" y="619" fill="#fb7185" font-size="7">step2 重排 done</text>
+
+<!-- SSE 触发点：Step3 上下文完成 -->
+<line x1="947" y1="713" x2="1280" y2="713" stroke="#fb7185" stroke-width="1.2" stroke-dasharray="4,3"/>
+<circle cx="1280" cy="713" r="5" fill="#fb7185" opacity="0.85"/>
+<text x="1285" y="725" fill="#fb7185" font-size="7">step3 上下文 done</text>
+
+<!-- SSE 触发点：Step4 token流式 -->
+<line x1="880" y1="818" x2="1280" y2="818" stroke="#fb7185" stroke-width="1.2" stroke-dasharray="4,3"/>
+<circle cx="1280" cy="818" r="5" fill="#fb7185" opacity="0.85"/>
+<text x="1285" y="830" fill="#fb7185" font-size="7">step4 token 流式</text>
+
+<!-- SSE 触发点：Step5 最终结果 -->
+<line x1="705" y1="899" x2="1280" y2="899" stroke="#fb7185" stroke-width="1.2" stroke-dasharray="4,3"/>
+<circle cx="1280" cy="899" r="5" fill="#fb7185" opacity="0.85"/>
+<text x="1285" y="910" fill="#fb7185" font-size="7">step5 result 最终</text>
+
+<!-- SSE 主线 → 前端 SSE Reader 回传 -->
+<path d="M 1280 899 L 1280 920 L 1370 920 L 1370 273 L 150 273 L 150 240" fill="none" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="6,4" marker-end="url(#ah-rose)"/>
+<text x="1100" y="280" fill="#fb7185" font-size="7" text-anchor="middle">SSE 回传 → 触发 setSteps / setStreamingText / setAnswer / saveHistory</text>
+
+<!-- 区域4：数据存储与外部服务 -->
+<rect x="20" y="955" width="1300" height="240" rx="10" fill="rgba(167,139,250,0.02)" stroke="#a78bfa" stroke-width="1" stroke-dasharray="8,4"/>
+<text x="36" y="978" fill="#a78bfa" font-size="12" font-weight="600">3. 数据存储与外部服务 (Data & External Services)</text>
+
+<text x="40" y="1005" fill="#cbd5e1" font-size="10" font-weight="600">数据库组 (Storage)</text>
+<rect x="40" y="1015" width="200" height="60" rx="6" fill="#0f172a"/>
+<rect x="40" y="1015" width="200" height="60" rx="6" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+<text x="140" y="1035" fill="white" font-size="11" font-weight="600" text-anchor="middle">FAISS Index 向量索引</text>
+<text x="140" y="1050" fill="#94a3b8" font-size="7" text-anchor="middle">IndexFlatIP 内积索引</text>
+<text x="140" y="1064" fill="#94a3b8" font-size="7" text-anchor="middle">.faiss 文件持久化</text>
+
+<rect x="250" y="1015" width="200" height="60" rx="6" fill="#0f172a"/>
+<rect x="250" y="1015" width="200" height="60" rx="6" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+<text x="350" y="1035" fill="white" font-size="11" font-weight="600" text-anchor="middle">BM25 Index 关键词索引</text>
+<text x="350" y="1050" fill="#94a3b8" font-size="7" text-anchor="middle">rank_bm25 排序算法</text>
+<text x="350" y="1064" fill="#94a3b8" font-size="7" text-anchor="middle">.pkl pickle 序列化</text>
+
+<rect x="460" y="1015" width="200" height="60" rx="6" fill="#0f172a"/>
+<rect x="460" y="1015" width="200" height="60" rx="6" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+<text x="560" y="1035" fill="white" font-size="11" font-weight="600" text-anchor="middle">metadata.db 元数据库</text>
+<text x="560" y="1050" fill="#94a3b8" font-size="7" text-anchor="middle">元信息 + 关键字字段</text>
+<text x="560" y="1064" fill="#94a3b8" font-size="7" text-anchor="middle">SQLite 嵌入式数据库</text>
+
+<rect x="670" y="1015" width="200" height="60" rx="6" fill="#0f172a"/>
+<rect x="670" y="1015" width="200" height="60" rx="6" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+<text x="770" y="1035" fill="white" font-size="11" font-weight="600" text-anchor="middle">history.db 历史库</text>
+<text x="770" y="1050" fill="#94a3b8" font-size="7" text-anchor="middle">查询历史 Q&A 记录</text>
+<text x="770" y="1064" fill="#94a3b8" font-size="7" text-anchor="middle">SQLite 嵌入式数据库</text>
+
+<rect x="880" y="1015" width="200" height="60" rx="6" fill="#0f172a"/>
+<rect x="880" y="1015" width="200" height="60" rx="6" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+<text x="980" y="1035" fill="white" font-size="11" font-weight="600" text-anchor="middle">Data Files 数据文件</text>
+<text x="980" y="1050" fill="#94a3b8" font-size="7" text-anchor="middle">chunked_json 切片结果</text>
+<text x="980" y="1064" fill="#94a3b8" font-size="7" text-anchor="middle">parsed_md 解析后 Markdown</text>
+
+<text x="40" y="1110" fill="#cbd5e1" font-size="10" font-weight="600">外部服务组 (External)</text>
+<rect x="40" y="1120" width="220" height="60" rx="6" fill="#0f172a"/>
+<rect x="40" y="1120" width="220" height="60" rx="6" fill="rgba(120,53,15,0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+<text x="150" y="1140" fill="white" font-size="11" font-weight="600" text-anchor="middle">通义千问 LLM 大语言模型</text>
+<text x="150" y="1155" fill="#94a3b8" font-size="7" text-anchor="middle">qwen3.6-plus 模型</text>
+<text x="150" y="1169" fill="#94a3b8" font-size="7" text-anchor="middle">重排 + 生成双重用途</text>
+
+<rect x="270" y="1120" width="220" height="60" rx="6" fill="#0f172a"/>
+<rect x="270" y="1120" width="220" height="60" rx="6" fill="rgba(120,53,15,0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+<text x="380" y="1140" fill="white" font-size="11" font-weight="600" text-anchor="middle">通义千问 Embedding 向量化</text>
+<text x="380" y="1155" fill="#94a3b8" font-size="7" text-anchor="middle">vision-flash 视觉嵌入</text>
+<text x="380" y="1169" fill="#94a3b8" font-size="7" text-anchor="middle">文本向量化 (维度对齐)</text>
+
+<rect x="500" y="1120" width="220" height="60" rx="6" fill="#0f172a"/>
+<rect x="500" y="1120" width="220" height="60" rx="6" fill="rgba(120,53,15,0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+<text x="610" y="1140" fill="white" font-size="11" font-weight="600" text-anchor="middle">MinerU API PDF 解析</text>
+<text x="610" y="1155" fill="#94a3b8" font-size="7" text-anchor="middle">PDF 文档解析服务</text>
+<text x="610" y="1169" fill="#94a3b8" font-size="7" text-anchor="middle">异步任务 + 轮询 (Polling)</text>
+
+<rect x="730" y="1120" width="220" height="60" rx="6" fill="#0f172a"/>
+<rect x="730" y="1120" width="220" height="60" rx="6" fill="rgba(30,41,59,0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+<text x="840" y="1140" fill="white" font-size="11" font-weight="600" text-anchor="middle">DashScope SDK 灵积 SDK</text>
+<text x="840" y="1155" fill="#94a3b8" font-size="7" text-anchor="middle">OpenAI 兼容 HTTP 协议</text>
+<text x="840" y="1169" fill="#94a3b8" font-size="7" text-anchor="middle">阿里云模型服务 SDK</text>
+
+<!-- 区域4 → 区域3 的连线（走右外侧绕行，垂直段在不同 x 避免重叠） -->
+<!-- FAISS Index → FAISS Search：经 (1335,940) 右外侧绕到 (310,530) -->
+<path d="M 40 1045 L 10 1045 L 10 950 L 10 550 L 300 550 L 300 530" fill="none" stroke="#a78bfa" stroke-width="1.2" marker-end="url(#ah-violet)"/>
+<text x="180" y="545" fill="#a78bfa" font-size="7" text-anchor="middle">faiss.read_index() 读取</text>
+
+<!-- BM25 Index → BM25 Search：经 (1340,943) 右外侧绕到 (515,530) -->
+<path d="M 350 1015 L 350 1000 L 370 1000 L 370 943 L 960 943 L 960 550 L 515 550 L 515 530" fill="none" stroke="#a78bfa" stroke-width="1.2" marker-end="url(#ah-violet)"/>
+<text x="1000" y="670" fill="#a78bfa" font-size="7" text-anchor="middle">pickle.load() 加载</text>
+
+<!-- metadata.db → Router：经 (1345,946) 右外侧绕到 (115,475) -->
+<path d="M 560 1015 L 560 985 L 1 985 L 1 515 L 40 515" fill="none" stroke="#a78bfa" stroke-width="1.2" marker-end="url(#ah-violet)"/>
+<text x="500" y="980" fill="#a78bfa" font-size="7" text-anchor="middle">关键字过滤</text>
+
+<!-- history.db → saveHistory：经 (1350,949) 右外侧绕到 (1110,190) -->
+<path d="M 770 1015 L 770 949 L 1390 949 L 1390 160 L 1110 160 L 1110 190" fill="none" stroke="#fb7185" stroke-width="1.2" marker-end="url(#ah-rose)"/>
+<text x="1230" y="945" fill="#fb7185" font-size="7" text-anchor="middle">saveHistory() → history.db</text>
+
+<!-- 通义千问 LLM → LLM Reranker (Step2)：起点沿 LLM 顶部向右跨过所有 LLM 服务，再经 (1355,952) 绕到 (225,580) -->
+<path d="M 160 1120 L 160 1090 L 25 1090 L 25 952 L 25 952 L 25 610 L 40 610" fill="none" stroke="#fbbf24" stroke-width="1.2" marker-end="url(#ah-amber)"/>
+<text x="120" y="1087" fill="#fbbf24" font-size="7" text-anchor="middle">LLM API 重排</text>
+
+<!-- 通义千问 LLM → 通义千问 API (Step4)：起点沿 LLM 顶部向右出边界，再经 (1360,955) 绕到 (155,790) -->
+<path d="M 160 1120 L 160 1090 L 245 1090 L 1360 1090 L 1360 770 L 200 770 L 200 790" fill="none" stroke="#fbbf24" stroke-width="1.2" marker-end="url(#ah-amber)"/>
+<text x="200" y="1087" fill="#fbbf24" font-size="7" text-anchor="middle">LLM API 生成</text>
+
+<!-- Legend 图例 (区域4之外) -->
+<text x="40" y="1230" fill="white" font-size="11" font-weight="600">图例 Legend</text>
+<rect x="40" y="1240" width="14" height="10" rx="2" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1"/>
+<text x="60" y="1248" fill="#94a3b8" font-size="8">Frontend 前端 (React SPA)</text>
+<rect x="220" y="1240" width="14" height="10" rx="2" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1"/>
+<text x="240" y="1248" fill="#94a3b8" font-size="8">Backend 后端 (Pipeline)</text>
+<rect x="400" y="1240" width="14" height="10" rx="2" fill="rgba(120,53,15,0.3)" stroke="#fbbf24" stroke-width="1"/>
+<text x="420" y="1248" fill="#94a3b8" font-size="8">Cloud 云服务 (External API)</text>
+<rect x="600" y="1240" width="14" height="10" rx="2" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1"/>
+<text x="620" y="1248" fill="#94a3b8" font-size="8">Database 数据库 (Storage)</text>
+<rect x="800" y="1240" width="14" height="10" rx="2" fill="rgba(30,41,59,0.5)" stroke="#94a3b8" stroke-width="1"/>
+<text x="820" y="1248" fill="#94a3b8" font-size="8">External 外部 (User Input)</text>
+<rect x="1000" y="1240" width="14" height="10" rx="2" fill="rgba(251,146,60,0.25)" stroke="#fb923c" stroke-width="1"/>
+<text x="1020" y="1248" fill="#94a3b8" font-size="8">Hybrid 混合融合</text>
+<line x1="1170" y1="1245" x2="1200" y2="1245" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="4,4"/>
+<text x="1208" y="1248" fill="#94a3b8" font-size="8">SSE Event Stream 事件流</text>
+</svg>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="card-header"><div class="card-dot cyan"></div><h3>前端请求流 (React SPA)</h3></div><ul><li>• User Input 用户输入 → handleAnswer() 处理函数 → POST /api/answer/stream</li><li>• SSE Reader 读取器: getReader() → decode → parse data: lines</li><li>• 3类事件: step(步骤进度) | token(流式令牌) | result(结果)</li><li>• React State: setSteps 步骤更新 → setStreamingText 流式文本 → setAnswer 设置答案</li></ul></div>
+      <div class="card"><div class="card-header"><div class="card-dot emerald"></div><h3>5步 RAG 流水线 (Pipeline)</h3></div><ul><li>• Step1 检索: Router 路由→FAISS 向量检索/BM25 关键词检索→Hybrid Fusion 混合融合→Page Restore 页面还原</li><li>• Step2 重排: ThreadPoolExecutor 并发 LLM Reranker + Score Fusion 分数融合</li><li>• Step3 上下文: n-gram Keyword Extract + Snippet Cut 切片 window=100 + Prompt Build 拼接</li><li>• Step4 生成: qwen3.6-plus stream=True 逐 token, json_repair 兜底</li><li>• Step5 校验: 过滤 LLM 幻觉页码, yield result 事件</li></ul></div>
+      <div class="card"><div class="card-header"><div class="card-dot rose"></div><h3>SSE 回传与闭环 (Event Stream)</h3></div><ul><li>• 右侧 SSE 通道: 5个事件触发点 (Step1-Step5) 沿虚线向上推送</li><li>• 前端实时消费: 步骤进度条 + 逐字流式渲染 typewriter 效果</li><li>• 完成后: saveHistory() 历史保存 → POST /api/history → history.db</li><li>• trace_id 追踪标识: 前端生成 → HTTP header → 全链路日志</li></ul></div>
+    </div>
+    <p class="footer">PRA-RAG 端到端数据流 · React SPA :3000 → FastAPI :4000 → 通义千问 · FAISS + BM25 混合检索 · MinerU PDF 解析</p>
+  </div>
+  <script>
+    async function copyAsImage(btn){const o=btn.textContent;try{const e=document.getElementById('report-container'),r=e.getBoundingClientRect(),p=32,c=await html2canvas(document.body,{backgroundColor:'#020617',scale:2,useCORS:true,ignoreElements:e=>e.classList&&e.classList.contains('toolbar'),x:r.left+window.scrollX-p,y:r.top+window.scrollY-p,width:r.width+p*2,height:r.height+p*2}),b=await new Promise(r=>c.toBlob(r,'image/png'));await navigator.clipboard.write([new ClipboardItem({'image/png':b})]);btn.textContent='已复制 Copied!'}catch(e){btn.textContent='失败 Failed'}setTimeout(()=>btn.textContent=o,2000)}
+    async function downloadPNG(btn){const o=btn.textContent;btn.textContent='处理中 ...';try{const e=document.getElementById('report-container'),r=e.getBoundingClientRect(),p=32,c=await html2canvas(document.body,{backgroundColor:'#020617',scale:2,useCORS:true,ignoreElements:e=>e.classList&&e.classList.contains('toolbar'),x:r.left+window.scrollX-p,y:r.top+window.scrollY-p,width:r.width+p*2,height:r.height+p*2}),l=document.createElement('a');l.download='pra-rag-e2e.png';l.href=c.toDataURL('image/png');l.click();btn.textContent='完成 Done!'}catch(e){btn.textContent='失败 Failed'}setTimeout(()=>btn.textContent=o,2000)}
+    async function downloadPDF(btn){const o=btn.textContent;btn.textContent='处理中 ...';try{const e=document.getElementById('report-container'),r=e.getBoundingClientRect(),p=32,c=await html2canvas(document.body,{backgroundColor:'#020617',scale:2,useCORS:true,ignoreElements:e=>e.classList&&e.classList.contains('toolbar'),x:r.left+window.scrollX-p,y:r.top+window.scrollY-p,width:r.width+p*2,height:r.height+p*2}),d=c.toDataURL('image/png'),{jsPDF:j}=window.jspdf,o2=c.width>c.height?'landscape':'portrait',pdf=new j({orientation:o2,unit:'px',format:[c.width,c.height],hotfixes:['px_scaling']});pdf.addImage(d,'PNG',0,0,c.width,c.height);pdf.save('pra-rag-e2e.pdf');btn.textContent='完成 Done!'}catch(e){btn.textContent='失败 Failed'}setTimeout(()=>btn.textContent=o,2000)}
+  </script>
+</body>
+</html>
